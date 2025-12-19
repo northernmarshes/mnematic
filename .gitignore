@@ -8,3 +8,6 @@ __pycache__/
 
 # Libraries
 lib/
+
+# Vendor code
+tests/vendor_examples
