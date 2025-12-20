@@ -7,7 +7,7 @@ __pycache__/
 *.mpy
 
 # Libraries
-lib/
+# lib/
 
 # Vendor code
 tests/vendor_examples

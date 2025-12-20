@@ -1,3 +1,6 @@
+# Run only when the time is not set !!!
+# RTC keeps track of time with the battery
+
 import subprocess
 from datetime import datetime
 
