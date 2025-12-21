@@ -46,8 +46,8 @@ Place the library files in the `lib/` folder on the Pico before running the main
   eInk (ERST)---  GP12 ──┤ 16 ║       ║ 25 ├── GP19 ------- RTC (DAT)
   eInk (BUSY)---  GP13 ──┤ 17 ║       ║ 24 ├── GP18 ------- RTC (CLK)
   eInk (GND)----  GND  ──┤ 18 ║       ║ 23 ├── GND -------- RTC (GND)
-                  GP14 ──┤ 19 ║       ║ 22 ├── GP17 ------- eInk
-  eInk ---------  GP15 ──┤ 20 ║       ║ 21 ├── GP16 ------- eInk
+                  GP14 ──┤ 19 ║       ║ 22 ├── GP17 ------- eInk (TP_INT)
+  eInk ---------  GP15 ──┤ 20 ║       ║ 21 ├── GP16 ------- eInk (TP_TRST)
                          │    ╚═══════╝    │
                          └─────────────────┘
                               
