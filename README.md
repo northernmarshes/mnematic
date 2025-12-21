@@ -1,5 +1,7 @@
 ### Mnematic
 
+### **!!! Work in progress - not ready for use!!!**
+
 A simple device that keeps you reminded about your habits.
 
 #### Hardware components
@@ -49,6 +51,4 @@ Place the library files in the `lib/` folder on the Pico before running the main
                          │    ╚═══════╝    │
                          └─────────────────┘
                               
-```
-
 ```

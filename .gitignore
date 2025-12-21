@@ -6,8 +6,5 @@ __pycache__/
 # MicroPython
 *.mpy
 
-# Libraries
-# lib/
-
 # Vendor code
 tests/vendor_examples
