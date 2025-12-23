@@ -1,6 +1,7 @@
 from machine import Pin, SPI
 import utime
 from lib.ds1302 import DS1302
+from lib.icnt86 import ICNT86, ICNT_Development
 import framebuf
 from Pico_ePaper_2_9 import EPD_2in9_Landscape
 import json
@@ -64,7 +65,9 @@ class Mnematic(EPD_2in9_Landscape):
         self.day_num = self.t[3]
         self.weekday = self.weekdays[int(self.day_num) - 1]
 
-        # Calculating time to deadline
+    def calculate_days_left(self):
+        """Calculating time to deadline"""
+
         # Parsing json deadline
         parts = self.next_deadline.split("-")
         self.next_date = str(f"{parts[2]}/{parts[1]}")
@@ -88,158 +91,17 @@ class Mnematic(EPD_2in9_Landscape):
 
     def main(self):
         try:
-            # Reset screen
+            self.t = self.rtc.date_time()
+            self.calculate_days_left()
+
             self.epd.fill(0xFF)
 
-            # If there is time left
             if self.days_left > 0:
-                # Turning off for development
-                # if self.days_left <= 0:
-                # ----- Draw left panel -----
-                self.epd.rect(
-                    self.PADDING,
-                    self.PADDING,
-                    self.RECT_WIDTH,
-                    self.RECT_HEIGHT,
-                    0x00,
-                )
-                self.epd.text(
-                    str(self.days_left),
-                    self.PADDING + self.RECT_WIDTH // 4,
-                    self.PADDING + self.RECT_HEIGHT // 2 - 10,
-                    0x00,
-                )
-                self.epd.text(
-                    "DAYS",
-                    self.PADDING + self.RECT_WIDTH // 2,
-                    self.PADDING + self.RECT_HEIGHT // 2 - 20,
-                    0x00,
-                )
-                self.epd.text(
-                    "LEFT",
-                    self.PADDING + self.RECT_WIDTH // 2,
-                    self.PADDING + self.RECT_HEIGHT // 2,
-                    0x00,
-                )
-
-                self.epd.text(
-                    f"Until {self.next_date}",
-                    self.PADDING + 25,
-                    self.PADDING + self.RECT_HEIGHT // 2 + 25,
-                    0x00,
-                )
-
-                # ----- Draw right panel -----
-                self.epd.rect(
-                    self.WIDTH // 2 + self.PADDING,
-                    self.PADDING,
-                    self.RECT_WIDTH,
-                    self.RECT_HEIGHT,
-                    0x00,
-                )
-                # Weekday
-                self.epd.text(
-                    self.weekday,
-                    self.PADDING * 3
-                    + self.RECT_WIDTH
-                    + self.RECT_WIDTH // 2
-                    - (len(self.weekday) * 8 // 2),
-                    self.PADDING + self.RECT_HEIGHT // 2 - 20,
-                    0x00,
-                )
-
-                # Day and month
-                self.epd.text(
-                    f"{self.t[2]:02d}/{self.t[1]:02d}",
-                    self.PADDING * 3 + self.RECT_WIDTH + self.RECT_WIDTH // 2 - 20,
-                    self.PADDING + self.RECT_HEIGHT // 2,
-                    0x00,
-                )
-
-                # Year
-                self.epd.text(
-                    f" {self.t[0]}",
-                    self.PADDING * 3 + self.RECT_WIDTH + self.RECT_WIDTH // 2 - 25,
-                    self.PADDING + self.RECT_HEIGHT // 2 + 20,
-                    0x00,
-                )
-
-                # ----- Draw progress bar -----
-                # Border
-                self.epd.rect(
-                    self.PADDING,
-                    self.PADDING * 2 + self.RECT_HEIGHT,
-                    self.WIDTH - 2 * self.PADDING,
-                    self.BAR - self.PADDING,
-                    0x00,
-                )
-
-                # Progress fill
-                self.epd.fill_rect(
-                    self.PADDING,
-                    self.PADDING * 2 + self.RECT_HEIGHT,
-                    self.BAR_FILLED,
-                    self.BAR - self.PADDING,
-                    0x00,
-                )
-
-                # Text background
-                self.epd.fill_rect(
-                    self.PADDING + self.RECT_WIDTH - 10,
-                    self.PADDING * 2 + self.RECT_HEIGHT + 8,
-                    len(self.percents) * 8,
-                    11,
-                    0xFF,
-                )
-
-                # Percents text
-                self.epd.text(
-                    self.percents,
-                    self.PADDING + self.RECT_WIDTH - 10,
-                    self.PADDING * 2 + self.RECT_HEIGHT + 10,
-                    0x00,
-                )
-
-            # If there is NO time left
-
-            if self.days_left <= 0:
-                # Turning on for development
-                # if self.days_left > 0:
-
-                # Frame
-                self.epd.rect(
-                    self.PADDING,
-                    self.PADDING,
-                    self.WIDTH - self.PADDING * 2,
-                    self.HEIGHT - self.PADDING * 2,
-                    0x00,
-                )
-
-                # Text
-                self.epd.text(
-                    "YOU'RE OUT OF TIME!",
-                    self.PADDING + 70,
-                    self.HEIGHT // 2 - 35,
-                    0x00,
-                )
-
-                self.epd.text(
-                    "You are X days late :(",
-                    self.PADDING + 60,
-                    self.HEIGHT // 2 - 10,
-                    0x00,
-                )
-
-                self.epd.rect(
-                    self.WIDTH // 2 - 80,
-                    self.HEIGHT // 2 + 15,
-                    160,
-                    30,
-                    0x00,
-                )
-
-            # Display buffer
+                self.countdown()
+            elif self.days_left <= 0:
+                self.expired()
             self.epd.display(self.epd.buffer)
+
         except Exception as e:
             error = f"Error: {e}"
             print(error)
@@ -249,6 +111,156 @@ class Mnematic(EPD_2in9_Landscape):
                 self.HEIGHT // 2,
                 0x00,
             )
+
+    def countdown(self):
+        # ----- Draw left panel -----
+        self.epd.rect(
+            self.PADDING,
+            self.PADDING,
+            self.RECT_WIDTH,
+            self.RECT_HEIGHT,
+            0x00,
+        )
+        self.epd.text(
+            str(self.days_left),
+            self.PADDING + self.RECT_WIDTH // 4,
+            self.PADDING + self.RECT_HEIGHT // 2 - 10,
+            0x00,
+        )
+        self.epd.text(
+            "DAYS",
+            self.PADDING + self.RECT_WIDTH // 2,
+            self.PADDING + self.RECT_HEIGHT // 2 - 20,
+            0x00,
+        )
+        self.epd.text(
+            "LEFT",
+            self.PADDING + self.RECT_WIDTH // 2,
+            self.PADDING + self.RECT_HEIGHT // 2,
+            0x00,
+        )
+
+        self.epd.text(
+            f"Until {self.next_date}",
+            self.PADDING + 25,
+            self.PADDING + self.RECT_HEIGHT // 2 + 25,
+            0x00,
+        )
+
+        # ----- Draw right panel -----
+        self.epd.rect(
+            self.WIDTH // 2 + self.PADDING,
+            self.PADDING,
+            self.RECT_WIDTH,
+            self.RECT_HEIGHT,
+            0x00,
+        )
+        # Weekday
+        self.epd.text(
+            self.weekday,
+            self.PADDING * 3
+            + self.RECT_WIDTH
+            + self.RECT_WIDTH // 2
+            - (len(self.weekday) * 8 // 2),
+            self.PADDING + self.RECT_HEIGHT // 2 - 20,
+            0x00,
+        )
+
+        # Day and month
+        self.epd.text(
+            f"{self.t[2]:02d}/{self.t[1]:02d}",
+            self.PADDING * 3 + self.RECT_WIDTH + self.RECT_WIDTH // 2 - 20,
+            self.PADDING + self.RECT_HEIGHT // 2,
+            0x00,
+        )
+
+        # Year
+        self.epd.text(
+            f" {self.t[0]}",
+            self.PADDING * 3 + self.RECT_WIDTH + self.RECT_WIDTH // 2 - 25,
+            self.PADDING + self.RECT_HEIGHT // 2 + 20,
+            0x00,
+        )
+
+        # ----- Draw progress bar -----
+        # Border
+        self.epd.rect(
+            self.PADDING,
+            self.PADDING * 2 + self.RECT_HEIGHT,
+            self.WIDTH - 2 * self.PADDING,
+            self.BAR - self.PADDING,
+            0x00,
+        )
+
+        # Progress fill
+        self.epd.fill_rect(
+            self.PADDING,
+            self.PADDING * 2 + self.RECT_HEIGHT,
+            self.BAR_FILLED,
+            self.BAR - self.PADDING,
+            0x00,
+        )
+
+        # Text background
+        self.epd.fill_rect(
+            self.PADDING + self.RECT_WIDTH - 10,
+            self.PADDING * 2 + self.RECT_HEIGHT + 8,
+            len(self.percents) * 8,
+            11,
+            0xFF,
+        )
+
+        # Percents text
+        self.epd.text(
+            self.percents,
+            self.PADDING + self.RECT_WIDTH - 10,
+            self.PADDING * 2 + self.RECT_HEIGHT + 10,
+            0x00,
+        )
+
+    def expired(self):
+        if self.days_left > 0:
+            # Frame
+            self.epd.rect(
+                self.PADDING,
+                self.PADDING,
+                self.WIDTH - self.PADDING * 2,
+                self.HEIGHT - self.PADDING * 2,
+                0x00,
+            )
+
+            # Text
+            self.epd.text(
+                "YOU'RE OUT OF TIME!",
+                self.PADDING + 70,
+                self.HEIGHT // 2 - 35,
+                0x00,
+            )
+
+            self.epd.text(
+                "You are X days late :(",
+                self.PADDING + 60,
+                self.HEIGHT // 2 - 10,
+                0x00,
+            )
+
+            self.epd.rect(
+                self.WIDTH // 2 - 80,
+                self.HEIGHT // 2 + 15,
+                160,
+                30,
+                0x00,
+            )
+
+            self.epd.text(
+                "LENSE CHANGE",
+                self.WIDTH // 2 - 48,
+                self.HEIGHT // 2 + 25,
+                0x00,
+            )
+
+    def confirmed(self):
+        pass
 
     def buzzer(self):
         # Set frequency

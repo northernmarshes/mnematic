@@ -23,6 +23,10 @@ Place the library files in the `lib/` folder on the Pico before running the main
   Author: Waveshare team  
   License: MIT License  
 
+- **Touch** - `icnt86.py`  
+  Author: Waveshare team  
+  License: MIT License  
+
 ### Pinout
 
 ```
