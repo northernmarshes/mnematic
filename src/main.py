@@ -44,6 +44,7 @@ class Mnematic(EPD_2in9_Landscape):
         self.BAR = 30
         self.RECT_HEIGHT = self.HEIGHT - 2 * self.PADDING - self.BAR
         self.RECT_WIDTH = self.WIDTH // 2 - 2 * self.PADDING
+        self.SECONDS_IN_DAY = 86400
 
         # Initialisation
         self.rtc.start()
@@ -79,7 +80,7 @@ class Mnematic(EPD_2in9_Landscape):
             (self.t[0], self.t[1], self.t[2], 0, 0, 0, 0, 0)
         )
 
-        self.days_left = (deadline_timestamp - current_timestamp) // 86400
+        self.days_left = (deadline_timestamp - current_timestamp) // self.SECONDS_IN_DAY
 
         # Calculating percents
         percent_value = 100 - round((self.days_left / 30) * 100)
@@ -89,6 +90,19 @@ class Mnematic(EPD_2in9_Landscape):
         self.bar_percentage = 1 - (self.days_left / 30)
         self.BAR_FILLED = round((self.WIDTH - 2 * self.PADDING) * self.bar_percentage)
 
+    def wait_for_touch(self):
+        self.tp = ICNT86()
+        self.dev = ICNT_Development()
+        self.old = ICNT_Development()
+        self.tp.ICNT_Init()
+
+        while True:
+            self.dev.Touch = 1
+            self.tp.ICNT_Scan(self.dev, self.old)
+            if self.dev.TouchCount > 0:
+                return True
+            utime.sleep(0.5)
+
     def main(self):
         try:
             self.t = self.rtc.date_time()
@@ -96,11 +110,17 @@ class Mnematic(EPD_2in9_Landscape):
 
             self.epd.fill(0xFF)
 
-            if self.days_left > 0:
-                self.countdown()
-            elif self.days_left <= 0:
-                self.expired()
-            self.epd.display(self.epd.buffer)
+            # if self.days_left > 0:  # correct condition
+            if self.days_left < 0:
+                self.draw_countdown()
+                self.epd.display(self.epd.buffer)
+            # elif self.days_left <= 0:  # correct condition
+            elif self.days_left > 0:
+                # self.buzzer()
+                self.draw_expired()
+                self.epd.display(self.epd.buffer)
+                if self.wait_for_touch():
+                    self.confirmed()
 
         except Exception as e:
             error = f"Error: {e}"
@@ -112,7 +132,7 @@ class Mnematic(EPD_2in9_Landscape):
                 0x00,
             )
 
-    def countdown(self):
+    def draw_countdown(self):
         # ----- Draw left panel -----
         self.epd.rect(
             self.PADDING,
@@ -183,6 +203,7 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # ----- Draw progress bar -----
+
         # Border
         self.epd.rect(
             self.PADDING,
@@ -218,7 +239,7 @@ class Mnematic(EPD_2in9_Landscape):
             0x00,
         )
 
-    def expired(self):
+    def draw_expired(self):
         if self.days_left > 0:
             # Frame
             self.epd.rect(
@@ -253,14 +274,56 @@ class Mnematic(EPD_2in9_Landscape):
             )
 
             self.epd.text(
-                "LENSE CHANGE",
-                self.WIDTH // 2 - 48,
+                ">>LENSE CHANGE<<",
+                self.WIDTH // 2 - 64,
                 self.HEIGHT // 2 + 25,
                 0x00,
             )
 
+    def calculate_new_deadline(self, days):
+        today = utime.mktime((self.t[0], self.t[1], self.t[2], 0, 0, 0, 0, 0))
+        new_timestamp = today + (days * self.SECONDS_IN_DAY)
+        new_date = utime.localtime(new_timestamp)
+        return f"{new_date[0]}-{new_date[1]:02d}-{new_date[2]:02d}"
+
     def confirmed(self):
-        pass
+        new_deadline = self.calculate_new_deadline(30)
+        save_deadline_data = {"habit": "Changing Lenses", "date": new_deadline}
+        with open("next_deadline.json", "w") as f:
+            json.dump(save_deadline_data, f)
+
+        self.epd.fill(0xFF)
+        # Frame
+        self.epd.rect(
+            self.PADDING,
+            self.PADDING,
+            self.WIDTH - self.PADDING * 2,
+            self.HEIGHT - self.PADDING * 2,
+            0x00,
+        )
+
+        # Text
+        self.epd.text(
+            "CONGRATS!",
+            self.PADDING + 70,
+            self.HEIGHT // 2 - 35,
+            0x00,
+        )
+
+        self.epd.text(
+            "NEW DEADLINE SET",
+            self.PADDING + 60,
+            self.HEIGHT // 2 - 10,
+            0x00,
+        )
+
+        self.epd.text(
+            new_deadline,
+            self.WIDTH // 2 - 64,
+            self.HEIGHT // 2 + 25,
+            0x00,
+        )
+        self.epd.display(self.epd.buffer)
 
     def buzzer(self):
         # Set frequency
