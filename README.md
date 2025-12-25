@@ -1,8 +1,8 @@
 ### Mnematic
 
-### **!!! Work in progress - not ready for use!!!**
+v1.0.0 - Stable
 
-A simple device that keeps you reminded about your habits.
+A simple device that keeps you reminded about your habits and routines. Comes with a default preset for monthly contact lens changes (30-day countdown), but can be easily configured for any recurring habit.
 
 #### Hardware components
 
@@ -13,7 +13,7 @@ A simple device that keeps you reminded about your habits.
 
 #### Libraries
 
-Place the library files in the `lib/` folder on the Pico before running the main program. This project uses two external libraries:
+Place the library files in the `lib/` folder on the Pico before running the main program. This project uses three external libraries:
 
 - **Real Time Clock** - `ds1302.py`  
   Author: shaoziyang, Omar BENHAMID  
@@ -54,5 +54,22 @@ Place the library files in the `lib/` folder on the Pico before running the main
   eInk ---------  GP15 ──┤ 20 ║       ║ 21 ├── GP16 ------- eInk (TP_TRST)
                          │    ╚═══════╝    │
                          └─────────────────┘
+  Legend:
+
+  - eInk: E-paper display connections 
+  - RTC: Real-time clock module
+  - Buzzer: Notification buzzer
                               
+```
+
+#### Setup
+
+1. Install MicroPython on your Raspberry Pi Pico
+2. Place the library files in the `lib/` folder
+3. Upload `main.py`, `next_deadline.json` and `deadline_archive.txt` to the Pico
+4. Connect hardware according to the pinout diagram below
+5. Set the initial deadline in `next_deadline.json`:
+
+```json
+   {"habit": "Changing Lenses", "date": "2025-01-30"}
 ```

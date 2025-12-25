@@ -8,14 +8,17 @@ import json
 
 def main():
     app = Mnematic()
-
+    app.run()
+    last_day = app.rtc.date_time()[2]
     while True:
-        app.run()
-
-        #  Calculating time until midnight
         t = app.rtc.date_time()
-        seconds_until_midnight = (24 - t[4]) * 3600 - t[5] * 60 - t[6]
-        utime.sleep(seconds_until_midnight if seconds_until_midnight > 0 else 86400)
+        print(f"Checking time: {t[4]:02d}:{t[5]:02d}:{t[6]:02d} (day {t[2]})")
+        if t[4] == 0 and t[5] == 0 and t[2] != last_day:
+            print(f"Midnight refresh: day {last_day} -> {t[2]}")
+            app.epd.init()
+            app.run()
+            last_day = t[2]
+        utime.sleep(60)
 
 
 class Mnematic(EPD_2in9_Landscape):
@@ -40,6 +43,7 @@ class Mnematic(EPD_2in9_Landscape):
         self.rtc.start()
         self.epd = EPD_2in9_Landscape()
         self.epd.Clear(0xFF)
+        self.last_notification_day = -1  # Keeping track of notifications
 
     def calculate_days_left(self):
         """Calculating time to the deadline"""
@@ -50,6 +54,9 @@ class Mnematic(EPD_2in9_Landscape):
                 data = json.load(f)
         except OSError:
             print("File error")
+            self.next_deadline = {
+                "date": "2025-01-30"
+            }  # Setting default in case of an error
         self.next_deadline = data["date"]
 
         # Calculating time
@@ -99,6 +106,7 @@ class Mnematic(EPD_2in9_Landscape):
 
         # Scanning for touch
         while True:
+            self.check_notification()  # Checking if it's 5pm to notify
             self.dev.Touch = 1
             self.tp.ICNT_Scan(self.dev, self.old)
             if self.dev.TouchCount > 0:
@@ -124,7 +132,6 @@ class Mnematic(EPD_2in9_Landscape):
                 self.draw_expired()
                 if self.wait_for_touch():
                     self.confirmed()
-
         except Exception as e:
             error = f"Error: {e}"
             print(error)
@@ -312,9 +319,12 @@ class Mnematic(EPD_2in9_Landscape):
         self.buzzer_confirm()
         new_deadline = self.calculate_new_deadline(30)
         save_deadline_data = {"habit": "Changing Lenses", "date": new_deadline}
+        # Overwriting json file
         with open("next_deadline.json", "w") as f:
             json.dump(save_deadline_data, f)
-
+        # Saving date to deadline archive
+        with open("deadline_archive.txt", "a") as archive:
+            archive.write(f"{new_deadline}\n")
         self.epd.fill(0xFF)
         # Frame
         self.epd.rect(
@@ -365,10 +375,20 @@ class Mnematic(EPD_2in9_Landscape):
         # turn off buzzer
         self.buzz.duty_u16(0)
 
-    def buzzer_notify(self):
-        """Setting notification schedule"""
-        #  program calculates time six in the morning
-        pass
+    def check_notification(self):
+        """Checking if it's 5 pm and buzzing"""
+        t = self.rtc.date_time()
+        if t[4] == 17 and t[5] == 0 and self.last_notification_day != t[2]:
+            self.last_notification_day = t[2]
+            # Buzzing
+            self.buzz.freq(400)
+            count = 0
+            while count < 3:
+                self.buzz.duty_u16(200)
+                utime.sleep(0.5)
+                self.buzz.duty_u16(0)
+                utime.sleep(0.5)
+                count += 1
 
     def buzzer_confirm(self):
         """Confirmation buzzer"""

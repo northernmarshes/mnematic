@@ -1,5 +1,6 @@
 # Run only when the time is not set !!!
 # RTC keeps track of time with the battery
+# Run with "python3 sync_time.py" not with mpremote
 
 import subprocess
 from datetime import datetime
