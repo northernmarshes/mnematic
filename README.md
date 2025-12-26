@@ -2,6 +2,8 @@
 
 A simple device that keeps you reminded about your habits and routines. Comes with a default preset for monthly contact lens changes (30-day countdown), but can be easily configured for any recurring habit.
 
+<img src="photo.jpg" width="800" alt="photo">
+
 #### Hardware components
 
 - Raspberry Pi Pico (RP2040) - running **MicroPython**
@@ -60,8 +62,8 @@ Place the library files in the `lib/` folder on the Pico before running the main
 1. Install MicroPython on your Raspberry Pi Pico
 2. Place the library files in the `lib/` folder
 3. Upload `main.py`, `next_deadline.json` and `deadline_archive.txt` to the Pico
-4. Connect hardware according to the pinout diagram below
-5. Set the initial deadline in `next_deadline.json`:
+4. Connect hardware according to the pinout diagram above
+5. Set the initial deadline/habit name in `next_deadline.json`:
 
 ```json
    {"habit": "Changing Lenses", "date": "2025-01-30"}
