@@ -1,7 +1,5 @@
 ### Mnematic
 
-v1.0.0 - Stable
-
 A simple device that keeps you reminded about your habits and routines. Comes with a default preset for monthly contact lens changes (30-day countdown), but can be easily configured for any recurring habit.
 
 #### Hardware components

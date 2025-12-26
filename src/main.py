@@ -12,10 +12,10 @@ def main():
     last_day = app.rtc.date_time()[2]
     while True:
         t = app.rtc.date_time()
-        print(f"Checking time: {t[4]:02d}:{t[5]:02d}:{t[6]:02d} (day {t[2]})")
+        # print(f"Checking time: {t[4]:02d}:{t[5]:02d}:{t[6]:02d} (day {t[2]})")
         if t[4] == 0 and t[5] == 0 and t[2] != last_day:
-            print(f"Midnight refresh: day {last_day} -> {t[2]}")
-            app.epd.init()
+            # print(f"Midnight refresh: day {last_day} -> {t[2]}")
+            app.init()
             app.run()
             last_day = t[2]
         utime.sleep(60)
@@ -41,8 +41,7 @@ class Mnematic(EPD_2in9_Landscape):
 
         # Initialisation
         self.rtc.start()
-        self.epd = EPD_2in9_Landscape()
-        self.epd.Clear(0xFF)
+        self.Clear(0xFF)
         self.last_notification_day = -1  # Keeping track of notifications
 
     def calculate_days_left(self):
@@ -54,9 +53,7 @@ class Mnematic(EPD_2in9_Landscape):
                 data = json.load(f)
         except OSError:
             print("File error")
-            self.next_deadline = {
-                "date": "2025-01-30"
-            }  # Setting default in case of an error
+            data = {"date": "2025-01-30"}  # Setting default in case of an error
         self.next_deadline = data["date"]
 
         # Calculating time
@@ -106,7 +103,7 @@ class Mnematic(EPD_2in9_Landscape):
 
         # Scanning for touch
         while True:
-            self.check_notification()  # Checking if it's 5pm to notify
+            self.check_notification()  # Checking if it's 5 pm to notify
             self.dev.Touch = 1
             self.tp.ICNT_Scan(self.dev, self.old)
             if self.dev.TouchCount > 0:
@@ -119,23 +116,21 @@ class Mnematic(EPD_2in9_Landscape):
             self.t = self.rtc.date_time()
             self.calculate_days_left()
 
-            self.epd.fill(0xFF)
+            self.fill(0xFF)
 
-            # 01 - couting till deadline
-            if self.days_left > 0:  # correct condition
-                # if self.days_left < 0:  # test condition
+            # 01 - Couting till deadline
+            if self.days_left > 0:
                 self.draw_countdown()
 
-            # 02 - deadline met
-            elif self.days_left <= 0:  # correct condition
-                # elif self.days_left > 0:  # test condition
+            # 02 - Deadline met
+            elif self.days_left <= 0:
                 self.draw_expired()
                 if self.wait_for_touch():
                     self.confirmed()
         except Exception as e:
             error = f"Error: {e}"
             print(error)
-            self.epd.text(
+            self.text(
                 error,
                 self.PADDING,
                 self.HEIGHT // 2,
@@ -145,33 +140,33 @@ class Mnematic(EPD_2in9_Landscape):
     def draw_countdown(self):
         """Drawing the main counting screen"""
         # ----- Draw left panel -----
-        self.epd.rect(
+        self.rect(
             self.PADDING,
             self.PADDING,
             self.RECT_WIDTH,
             self.RECT_HEIGHT,
             0x00,
         )
-        self.epd.text(
+        self.text(
             str(self.days_left),
             self.PADDING + self.RECT_WIDTH // 4,
             self.PADDING + self.RECT_HEIGHT // 2 - 10,
             0x00,
         )
-        self.epd.text(
+        self.text(
             "DAYS",
             self.PADDING + self.RECT_WIDTH // 2,
             self.PADDING + self.RECT_HEIGHT // 2 - 20,
             0x00,
         )
-        self.epd.text(
+        self.text(
             "LEFT",
             self.PADDING + self.RECT_WIDTH // 2,
             self.PADDING + self.RECT_HEIGHT // 2,
             0x00,
         )
 
-        self.epd.text(
+        self.text(
             f"Until {self.next_date}",
             self.PADDING + 25,
             self.PADDING + self.RECT_HEIGHT // 2 + 25,
@@ -179,7 +174,7 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # ----- Draw right panel -----
-        self.epd.rect(
+        self.rect(
             self.WIDTH // 2 + self.PADDING,
             self.PADDING,
             self.RECT_WIDTH,
@@ -187,7 +182,7 @@ class Mnematic(EPD_2in9_Landscape):
             0x00,
         )
         # Weekday
-        self.epd.text(
+        self.text(
             self.weekday,
             self.PADDING * 3
             + self.RECT_WIDTH
@@ -198,7 +193,7 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # Day and month
-        self.epd.text(
+        self.text(
             f"{self.t[2]:02d}/{self.t[1]:02d}",
             self.PADDING * 3 + self.RECT_WIDTH + self.RECT_WIDTH // 2 - 20,
             self.PADDING + self.RECT_HEIGHT // 2,
@@ -206,7 +201,7 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # Year
-        self.epd.text(
+        self.text(
             f" {self.t[0]}",
             self.PADDING * 3 + self.RECT_WIDTH + self.RECT_WIDTH // 2 - 25,
             self.PADDING + self.RECT_HEIGHT // 2 + 20,
@@ -216,7 +211,7 @@ class Mnematic(EPD_2in9_Landscape):
         # ----- Draw progress bar -----
 
         # Border
-        self.epd.rect(
+        self.rect(
             self.PADDING,
             self.PADDING * 2 + self.RECT_HEIGHT,
             self.WIDTH - 2 * self.PADDING,
@@ -225,7 +220,7 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # Progress fill
-        self.epd.fill_rect(
+        self.fill_rect(
             self.PADDING,
             self.PADDING * 2 + self.RECT_HEIGHT,
             self.BAR_FILLED,
@@ -234,7 +229,7 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # Text background
-        self.epd.fill_rect(
+        self.fill_rect(
             self.PADDING + self.RECT_WIDTH - 10,
             self.PADDING * 2 + self.RECT_HEIGHT + 8,
             len(self.percents) * 8,
@@ -243,19 +238,19 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # Percents text
-        self.epd.text(
+        self.text(
             self.percents,
             self.PADDING + self.RECT_WIDTH - 10,
             self.PADDING * 2 + self.RECT_HEIGHT + 10,
             0x00,
         )
 
-        self.epd.display(self.epd.buffer)
+        self.display(self.buffer)
 
     def draw_expired(self):
         """Drawing expired screen"""
         # Frame
-        self.epd.rect(
+        self.rect(
             self.PADDING,
             self.PADDING,
             self.WIDTH - self.PADDING * 2,
@@ -264,7 +259,7 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # Text
-        self.epd.text(
+        self.text(
             "YOU'RE OUT OF TIME!",
             self.PADDING + 70,
             self.HEIGHT // 2 - 35,
@@ -272,7 +267,7 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # Text
-        self.epd.text(
+        self.text(
             f"You are {self.calculate_delay()} days late :(",
             self.PADDING + 60,
             self.HEIGHT // 2 - 10,
@@ -280,7 +275,7 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # Frame
-        self.epd.rect(
+        self.rect(
             self.WIDTH // 2 - 80,
             self.HEIGHT // 2 + 15,
             160,
@@ -289,14 +284,14 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # "Button"
-        self.epd.text(
+        self.text(
             ">>LENSE CHANGE<<",
             self.WIDTH // 2 - 64,
             self.HEIGHT // 2 + 25,
             0x00,
         )
 
-        self.epd.display(self.epd.buffer)
+        self.display(self.buffer)
 
     def calculate_delay(self):
         """Calculating how many days passed from the last deadline"""
@@ -325,9 +320,9 @@ class Mnematic(EPD_2in9_Landscape):
         # Saving date to deadline archive
         with open("deadline_archive.txt", "a") as archive:
             archive.write(f"{new_deadline}\n")
-        self.epd.fill(0xFF)
+        self.fill(0xFF)
         # Frame
-        self.epd.rect(
+        self.rect(
             self.PADDING,
             self.PADDING,
             self.WIDTH - self.PADDING * 2,
@@ -336,27 +331,27 @@ class Mnematic(EPD_2in9_Landscape):
         )
 
         # Text
-        self.epd.text(
+        self.text(
             "CONGRATS!",
             self.WIDTH // 2 - 34,
             self.HEIGHT // 2 - 35,
             0x00,
         )
 
-        self.epd.text(
+        self.text(
             "NEW DEADLINE SET",
             self.WIDTH // 2 - 60,
             self.HEIGHT // 2 - 10,
             0x00,
         )
 
-        self.epd.text(
+        self.text(
             new_deadline,
             self.WIDTH // 2 - 40,
             self.HEIGHT // 2 + 25,
             0x00,
         )
-        self.epd.display(self.epd.buffer)
+        self.display(self.buffer)
 
         utime.sleep(10)
 
