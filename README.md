@@ -52,11 +52,6 @@ Place the library files in the `lib/` folder on the Pico before running the main
   eInk ---------  GP15 ──┤ 20 ║       ║ 21 ├── GP16 ------- eInk (TP_TRST)
                          │    ╚═══════╝    │
                          └─────────────────┘
-  Legend:
-
-  - eInk: E-paper display connections 
-  - RTC: Real-time clock module
-  - Buzzer: Notification buzzer
                               
 ```
 
